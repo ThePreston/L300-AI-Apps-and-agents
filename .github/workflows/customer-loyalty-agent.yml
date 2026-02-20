@@ -1,0 +1,53 @@
+name: Run Customer Loyalty Agent Initializer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/app/agents/customerLoyaltyAgent_initializer.py'
+      - 'src/prompts/CustomerLoyaltyAgentPrompt.txt'
+      - 'src/app/tools/discountLogic.py'
+  workflow_dispatch:
+
+jobs:
+  run-agent-initializer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write 
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      working-directory: ./src
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # Ensure azure-ai-projects and identity are installed if not in requirements
+        pip install azure-ai-projects azure-identity
+
+    - name: Run Customer Loyalty Agent Initializer
+      working-directory: ./src
+      env:
+        # Map the monolithic secret to individual env vars for DefaultAzureCredential
+        AZURE_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+        AZURE_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        AZURE_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+        AZURE_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+        
+        # Load other necessary env vars from the ENV secret
+        # Note: We are sourcing the .env file created from the secret for the python script to pick up
+      run: |
+        # Create .env file for python-dotenv if used, or just export them
+        echo "${{ secrets.ENV }}" > .env
+        
+        # specific script execution
+        python app/agents/customerLoyaltyAgent_initializer.py

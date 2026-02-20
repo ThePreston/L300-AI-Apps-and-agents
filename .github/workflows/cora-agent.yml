@@ -1,0 +1,44 @@
+name: Run Cora (Shopper) Agent Initializer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/app/agents/shopperAgent_initializer.py'
+      - 'src/prompts/ShopperAgentPrompt.txt'
+  workflow_dispatch:
+
+jobs:
+  run-agent-initializer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write 
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      working-directory: ./src
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install azure-ai-projects azure-identity
+
+    - name: Run Shopper Agent Initializer
+      working-directory: ./src
+      env:
+        AZURE_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+        AZURE_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        AZURE_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+        AZURE_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+      run: |
+        echo "${{ secrets.ENV }}" > .env
+        python app/agents/shopperAgent_initializer.py

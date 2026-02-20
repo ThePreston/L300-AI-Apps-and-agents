@@ -48,12 +48,13 @@ out/
 # Secret files
 .env
 .env.*
+env_sample.env
 
 # Azure/ADO
 .azure-pipelines.yml
 *.azuredevops
 
 # Github
-.github/
+# .github/
 parameters.json
 .azure
